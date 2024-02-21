@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Meta tags for character set and responsive design -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Title of the page -->
+  <title>User Management Panel</title>
+  <!-- Internal styles for the page -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f8ff; /* Light Blue */
+      margin: 20px;
+    }
+
+    #userForm {
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    #userTable {
+      margin-top: 20px;
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    #userTable th,
+    #userTable td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    #userTable th {
+      background-color: #428bca; /* Blue */
+      color: #fff;
+    }
+
+    #userTable tr:hover {
+      background-color: #f5f5f5;
+    }
+
+    .btn {
+      background-color: #428bca;
+      color: #fff;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="userForm">
+    <!-- User Management form -->
+    <h2>User Management</h2>
+    <form id="addUserForm">
+      <!-- Input fields for username and password -->
+      <label for="username">Username:</label>
+      <input type="text" id="username" name="username" required>
+
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" required>
+
+      <!-- Button to trigger the addUser() function -->
+      <button type="button" class="btn" onclick="addUser()">Add User</button>
+    </form>
+  </div>
+
+  <!-- User table to display usernames and delete buttons -->
+  <table id="userTable">
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="userTableBody"></tbody>
+  </table>
+
+  <!-- JavaScript script for fetching and manipulating user data -->
+  <script>
+    // Function to fetch and display users on page load
+    getUsers();
+
+    function getUsers() {
+      fetch('//sso.test/api.php', {
+        method: 'POST',
+        body: JSON.stringify({
+          mode: 'GETUSERS'
+        })
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          // Clear existing user data in the table body
+          document.getElementById('userTableBody').innerHTML = '';
+
+          // Iterate through fetched data and populate the user table
+          data.forEach(item => {
+            const table = document.getElementById('userTableBody');
+            const row = table.insertRow(table.rows.length);
+            const cell1 = row.insertCell(0);
+            const cell2 = row.insertCell(1);
+
+            cell1.innerHTML = item.username;
+            cell2.innerHTML = `<button class="btn" onclick="deleteUser('${item.username}')">Delete</button>`;
+          });
+
+        })
+        .catch(error => {
+          console.error('Fetch error:', error);
+        });
+    }
+
+    // Function to add a new user
+    function addUser() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      if (username && password) {
+        // Generate a hash based on the current date and time
+        const currentDateTime = new Date();
+        const year = currentDateTime.getFullYear();
+        const month = currentDateTime.getMonth() + 1;
+        const day = currentDateTime.getDate();
+        const hour = currentDateTime.getHours();
+        const hashDate = `${year}${month}${day}${hour}`;
+        
+        // Fetch to register a new user
+        fetch('//sso.test/api.php', {
+          method: 'POST',
+          body: JSON.stringify({
+            mode: 'REGISTER',
+            hashdate: hashDate,
+            username: username,
+            password: password
+          })
+        })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.text();
+          })
+          .then(data => {
+            // If registration is successful, update the user table
+            if (data == 'SUCCESS') {
+              getUsers();
+            } else {
+              console.log(data);
+            }
+          })
+          .catch(error => {
+            console.error('Fetch error:', error);
+          });
+
+        // Clear input fields after registration
+        document.getElementById('username').value = '';
+        document.getElementById('password').value = '';
+      } else {
+        // Alert if username or password is missing
+        alert('Username and password are required.');
+      }
+    }
+
+    // Function to delete a user
+    function deleteUser(userName) {
+      fetch('//sso.test/api.php', {
+        method: 'POST',
+        body: JSON.stringify({
+          mode: 'REMOVE',
+          username: userName
+        })
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.text();
+        })
+        .then(data => {
+          // If deletion is successful, update the user table
+          if (data == 'SUCCESS') {
+            getUsers();
+          } else {
+            console.log(data);
+          }
+        })
+        .catch(error => {
+          console.error('Fetch error:', error);
+        });
+    }
+  </script>
+
+</body>
+
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Set character set and viewport for responsive design -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login and Registration</title>
+  <!-- Styles for the page -->
+  <style>
+    /* Reset some default styles */
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Global styles */
+    body {
+      background-color: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      text-align: center;
+      width: 300px;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+    }
+
+    h2 {
+      color: #3498db;
+    }
+
+    /* Form styles */
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      margin-bottom: 8px;
+      color: #333;
+    }
+
+    input {
+      padding: 10px;
+      margin-bottom: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      padding: 10px;
+      background-color: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+    }
+
+    /* Switch between login and registration forms */
+    .toggle-form {
+      margin-top: 20px;
+      color: #3498db;
+      cursor: pointer;
+    }
+
+    /* Style for active form (login or register) */
+    .active {
+      font-weight: bold;
+      color: #3498db;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Container for the login and registration forms -->
+  <div class="container">
+    <h2>Login</h2>
+    <!-- Login form -->
+    <form id="loginForm">
+      <label for="loginUsername">Username:</label>
+      <input type="text" id="loginUsername" name="loginUsername" required>
+
+      <label for="loginPassword">Password:</label>
+      <input type="password" id="loginPassword" name="loginPassword" required>
+
+      <button type="submit">Login</button>
+    </form>
+
+    <!-- Registration form -->
+    <form id="registerForm" style="display: none;">
+      <label for="registerUsername">Username:</label>
+      <input type="text" id="registerUsername" name="registerUsername" required>
+
+      <label for="registerPassword">Password:</label>
+      <input type="password" id="registerPassword" name="registerPassword" required>
+
+      <button type="submit">Register</button>
+    </form>
+
+    <!-- Toggle between login and registration forms -->
+    <div class="toggle-form" onclick="toggleForms()"><span id="toggleText" class="active">Register</span></div>
+  </div>
+
+  <!-- JavaScript code for toggling forms and handling form submissions -->
+  <script>
+    // Function to toggle between login and registration forms
+    function toggleForms() {
+      const loginForm = document.getElementById('loginForm');
+      const registerForm = document.getElementById('registerForm');
+      const toggleText = document.getElementById('toggleText');
+
+      if (loginForm.style.display === 'none') {
+        window.location.reload();
+      } else {
+        loginForm.style.display = 'none';
+        registerForm.style.display = 'block';
+        toggleText.innerText = 'Login';
+        toggleText.classList.remove('active');
+      }
+    }
+
+    // Event listener for the login form submission
+    document.getElementById("loginForm").addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      // Extracting form data
+      const formData = new FormData(event.target);
+      const username = formData.get("loginUsername");
+      const password = formData.get("loginPassword");
+      const currentDateTime = new Date();
+      const year = currentDateTime.getFullYear();
+      const month = currentDateTime.getMonth() + 1;
+      const day = currentDateTime.getDate();
+      const hour = currentDateTime.getHours();
+      const hashDate = `${year}${month}${day}${hour}`;
+
+      // Sending login data to the server using Fetch API
+      fetch('//sso.test/api.php', {
+        method: 'POST',
+        body: JSON.stringify({
+          mode: 'LOGIN',
+          site: window.location.hash.substring(1),
+          hashdate: hashDate,
+          username: username,
+          password: password
+        })
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.text();
+        })
+        .then(data => {
+          if (data == 'SUCCESS') {
+            alert('Logged in successfully');
+            window.location = `//${window.location.hash.substring(1)}`;
+          } else if (data.includes('NOT_REGISTERED')) {
+            alert('Username is not registered.');
+          } else {
+            console.log(data);
+          }
+        })
+        .catch(error => {
+          console.error('Fetch error:', error);
+        });
+    });
+
+    // Event listener for the registration form submission
+    document.getElementById("registerForm").addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      // Extracting form data
+      const formData = new FormData(event.target);
+      const username = formData.get("registerUsername");
+      const password = formData.get("registerPassword");
+      const currentDateTime = new Date();
+      const year = currentDateTime.getFullYear();
+      const month = currentDateTime.getMonth() + 1;
+      const day = currentDateTime.getDate();
+      const hour = currentDateTime.getHours();
+      const hashDate = `${year}${month}${day}${hour}`;
+
+      // Sending registration data to the server using Fetch API
+      fetch('//sso.test/api.php', {
+        method: 'POST',
+        body: JSON.stringify({
+          mode: 'REGISTER',
+          site: window.location.hash.substring(1),
+          hashdate: hashDate,
+          username: username,
+          password: password
+        })
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.text();
+        })
+        .then(data => {
+          // Handling server response
+          if (data == 'SUCCESS') {
+            alert('Registered successfully');
+            window.location = `//${window.location.hash.substring(1)}`;
+          } else if (data.includes('Duplicate')) {
+            alert('Username already registered.');
+          } else {
+            console.log(data);
+          }
+        })
+        .catch(error => {
+          console.error('Fetch error:', error);
+        });
+    });
+  </script>
+</body>
+
+</html>

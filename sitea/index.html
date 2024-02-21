@@ -1,0 +1,168 @@
+<!-- HTML document declaration with language set to English -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Metadata for character set and viewport configuration -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Title of the web page -->
+  <title>Site A</title>
+  <!-- Link to an external stylesheet for styling -->
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+
+<body>
+  <!-- Header section with the title of the site -->
+  <header>
+    <h1>Site A</h1>
+  </header>
+
+  <!-- Navigation section with an unordered list -->
+  <nav>
+    <ul>
+      <!-- List item with a link to the home page -->
+      <li><a href="#">Home</a></li>
+      <!-- List item with a link to login using Single Sign-On (SSO) -->
+      <li><a id="loginBtn" href="//sso.test/login.html#sitea.test">Login with SSO</a></li>
+    </ul>
+  </nav>
+
+  <!-- Main content section -->
+  <section>
+    <!-- Paragraph introducing Site A with a span for login notice -->
+    <p>This is Site A.<span id="loginNotice"></span></p>
+  </section>
+
+  <!-- Footer section with a copyright notice -->
+  <footer>
+    <p>&copy; Site A</p>
+  </footer>
+
+  <!-- JavaScript script embedded in the HTML document -->
+  <script>
+    // JavaScript code starts here
+
+    // Retrieve the login button and login notice elements from the DOM
+    const loginBtn = document.getElementById('loginBtn');
+    const loginNotice = document.getElementById('loginNotice');
+
+    // Get the current date and time to create a unique hash for authentication
+    const currentDateTime = new Date();
+    const year = currentDateTime.getFullYear();
+    const month = currentDateTime.getMonth() + 1;
+    const day = currentDateTime.getDate();
+    const hour = currentDateTime.getHours();
+    const hashDate = `${year}${month}${day}${hour}`;
+
+    // Perform a POST request to the SSO API to generate an authentication token
+    fetch('//sso.test/api.php', {
+        method: 'POST',
+        body: JSON.stringify({
+          mode: 'GENERATE',
+          hashdate: hashDate
+        })
+      })
+      .then(response => {
+        // Check if the response is successful; otherwise, throw an error
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        // Extract the text data from the response
+        return response.text();
+      })
+      .then(data => {
+        // Perform another POST request to check the authentication status
+        fetch('//sso.test/api.php', {
+            method: 'POST',
+            body: JSON.stringify({
+              mode: 'CHECK',
+              auth: data,
+            })
+          })
+          .then(response => {
+            // Check if the response is successful; otherwise, throw an error
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            // Extract the text data from the response
+            return response.text();
+          })
+          .then(data => {
+            // Check if the user is logged in and update the UI accordingly
+            if (data == 'LOGGEDIN') {
+              loginBtn.href = '#';
+              loginBtn.innerHTML = 'Logout';
+              loginNotice.innerHTML = 'You are logged in via SSO';
+            }
+          })
+          .catch(error => {
+            // Handle errors that occur during the fetch operations
+            console.error('Fetch error:', error);
+          });
+      })
+      .catch(error => {
+        // Handle errors that occur during the fetch operations
+        console.error('Fetch error:', error);
+      });
+
+    // Add a click event listener to the login button
+    loginBtn.addEventListener('click', function (event) {
+      // Check if the login button href contains a specific substring
+      if (loginBtn.href.indexOf('sitea.test/#') !== -1) {
+        // Prevent the default behavior of the link
+        event.preventDefault();
+
+        // Perform a series of POST requests to log out the user via SSO
+        fetch('//sso.test/api.php', {
+            method: 'POST',
+            body: JSON.stringify({
+              mode: 'GENERATE',
+              hashdate: hashDate
+            })
+          })
+          .then(response => {
+            // Check if the response is successful; otherwise, throw an error
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            // Extract the text data from the response
+            return response.text();
+          })
+          .then(data => {
+            // Perform another POST request to initiate the logout process
+            fetch('//sso.test/api.php', {
+                method: 'POST',
+                body: JSON.stringify({
+                  mode: 'LOGOUT',
+                  auth: data,
+                })
+              })
+              .then(response => {
+                // Check if the response is successful; otherwise, throw an error
+                if (!response.ok) {
+                  throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                // Extract the text data from the response
+                return response.text();
+              })
+              .then(data => {
+                // Display an alert and reload the page after successful logout
+                alert('You are now logged out via SSO.');
+                window.location.reload();
+              })
+              .catch(error => {
+                // Handle errors that occur during the fetch operations
+                console.error('Fetch error:', error);
+              });
+          })
+          .catch(error => {
+            // Handle errors that occur during the fetch operations
+            console.error('Fetch error:', error);
+          });
+      }
+    });
+  </script>
+</body>
+
+</html>
